@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <div>
+        <button id="compute">Compute</button>
+        <button id="step">step</button>
+    </div>
+    <table id="board"></table>
+    <div id="pieces-showcase"></div>
+    <script type="module">
+        import { Game, pieces, find_placements, game } from "./index.mjs"
+
+        function createElement(parent, elName, ...attributes) {
+            const newElement = document.createElement(elName);
+            if (attributes !== null && attributes.length > 0) {
+                attributes.forEach((attribute) => {
+                    if (attribute) {
+                        let [type, value] = attribute.split("=");
+                        value = attribute.split("=").slice(1).join("=");
+                        if (type === "content") newElement.textContent = value;
+                        else newElement.setAttribute(type, value);
+                    }
+                });
+            }
+            if (parent) parent.appendChild(newElement);
+            return newElement;
+        }
+
+        let selected_pieces = [];
+
+        let solution_idx;
+        let solution;
+
+        document.getElementById("step").onclick = step_through_solution;
+
+        function step_through_solution() {
+            if (!solution) return;
+
+            let [pidx, x, y] = solution[solution_idx];
+            let piece = selected_pieces[pidx];
+
+            console.log(piece, x, y)
+
+            for (let j = 0; j < board.childNodes.length; j++) {
+                let row = board.childNodes[j];
+                for (let i = 0; i < row.childNodes.length; i++) {
+                    row.childNodes[i].classList.remove("selected")
+
+                    if (i < x || i >= (x + piece.width)) continue;
+                    if (j < y || j >= (y + piece.height)) continue;
+
+                    if (piece.get(i - x, j - y)) {
+                        row.childNodes[i].classList.add("selected")
+                    }
+                }
+            }
+
+            solution_idx = (solution_idx + 1) % solution.length;
+        }
+
+        document.getElementById("compute").onclick = () => {
+            const moves = find_placements(game, ...selected_pieces);
+
+            if (moves.length == 0) {
+                alert("no solution found");
+            }
+            solution = moves[0];
+            solution_idx = 0;
+
+            if (solution.length == 0) {
+                alert("no pieces selected")
+            }
+
+            step_through_solution();
+        }
+
+        const board = document.getElementById("board");
+        const showcase = document.getElementById("pieces-showcase")
+
+        function handle_block_click(e) {
+            let el = e.currentTarget;
+            let x = parseInt(el.dataset.x), y = parseInt(el.dataset.y)
+
+            game.set_mutate(x, y, !game.get(x, y))
+            el.classList.toggle("active")
+        }
+
+        for (let y = 0; y < game.height; y++) {
+            const row = createElement(board, "tr", "class=row")
+            for (let x = 0; x < game.width; x++) {
+                let el = createElement(row, "td", "class=block", "data-x=" + x, "data-y=" + y)
+                el.addEventListener("click", handle_block_click)
+
+                if (game.get(x, y)) {
+                    el.classList.add("active")
+                }
+            }
+        }
+
+
+        function handle_piece_click(piece) {
+            return function (e) {
+                let el = e.currentTarget;
+
+                if (el.classList.contains("selected")) {
+                    selected_pieces = selected_pieces.filter(p => p != piece)
+                } else {
+                    selected_pieces.push(piece);
+                }
+
+                console.log(piece)
+
+                e.currentTarget.classList.toggle("selected");
+            }
+        }
+
+        for (let piece of pieces) {
+            const container = createElement(showcase, "div");
+
+            console.log(piece)
+            for (let y = 0; y < piece.height; y++) {
+                const row = createElement(container, "div", "class=row")
+                for (let x = 0; x < piece.width; x++) {
+                    let el = createElement(row, "div", "class=block");
+                    if (piece.get(x, y)) el.classList.add("active")
+                }
+            }
+
+            container.addEventListener("click", handle_piece_click(piece));
+        }
+
+    </script>
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+
+        #board {
+            --size: 3em;
+            margin: 0 auto;
+        }
+
+        #pieces-showcase {
+            padding: 2em;
+            --size: 1em;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--size);
+        }
+
+        #pieces-showcase .block:not(.active) {
+            border: none;
+        }
+
+        #pieces-showcase .selected .block.block.active {
+            background-color: #43ef2a;
+        }
+
+        .row {
+            gap: 0;
+            display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            width: auto;
+            width: min-content;
+            margin: 0 auto;
+        }
+
+        .block {
+            display: inline-block;
+            width: var(--size);
+            height: var(--size);
+            border: 2px solid gray;
+            margin: 0;
+            padding: 0;
+
+        }
+
+        .block.selected {
+            background-color: aquamarine;
+        }
+
+        .block:hover {
+            cursor: pointer;
+        }
+
+        .block.active {
+            background-color: brown;
+        }
+    </style>
+</body>
+
+</html>
