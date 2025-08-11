@@ -209,14 +209,13 @@ export function find_placements(game, ...pieces) {
 						stack.length = 0;
 					}
 				} else {
-					let moves_to_push = [...moves, [pidx, x, y]]
-					let s = JSON.stringify(moves_to_push.sort((a, b) => a[0] - b[0]))
+					let s = JSON.stringify([...moves, [pidx, x, y]].sort((a, b) => a[0] - b[0]))
 
 					if (!moves_set.has(s)) {
 						moves_set.add(s)
 						stack.push({
 							game: g,
-							moves: moves_to_push
+							moves: [...moves, [pidx, x, y]]
 						})
 					}
 				}
