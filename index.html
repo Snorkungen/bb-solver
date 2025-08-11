@@ -84,19 +84,34 @@
         const board = document.getElementById("board");
         const showcase = document.getElementById("pieces-showcase")
 
-        function handle_block_click(e) {
+        let active_block = [-1, -1]
+        function handle_block_mousedown(e) {
+            if (e.buttons == 0) return;
+
             let el = e.currentTarget;
-            let x = parseInt(el.dataset.x), y = parseInt(el.dataset.y)
+            let x = parseInt(el.dataset.x), y = parseInt(el.dataset.y);
+
+            if (active_block[0] == x && active_block[1] == y) return;
 
             game.set_mutate(x, y, !game.get(x, y))
             el.classList.toggle("active")
+        }
+
+        function handle_block_mouseup(e) {
+            let el = e.currentTarget;
+            let x = parseInt(el.dataset.x), y = parseInt(el.dataset.y);
+            active_block = [-1, -1]
         }
 
         for (let y = 0; y < game.height; y++) {
             const row = createElement(board, "tr", "class=row")
             for (let x = 0; x < game.width; x++) {
                 let el = createElement(row, "td", "class=block", "data-x=" + x, "data-y=" + y)
-                el.addEventListener("click", handle_block_click)
+
+                el.addEventListener("mousedown", handle_block_mousedown)
+                el.addEventListener("mouseenter", handle_block_mousedown)
+                el.addEventListener("mouseup", handle_block_mouseup)
+                el.addEventListener("mouseleave", handle_block_mouseup)
 
                 if (game.get(x, y)) {
                     el.classList.add("active")
@@ -124,7 +139,6 @@
         for (let piece of pieces) {
             const container = createElement(showcase, "div");
 
-            console.log(piece)
             for (let y = 0; y < piece.height; y++) {
                 const row = createElement(container, "div", "class=row")
                 for (let x = 0; x < piece.width; x++) {
@@ -151,10 +165,11 @@
 
         #pieces-showcase {
             padding: 2em;
-            --size: 1em;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: var(--size);
+            --size: 1.5em;
+            display: flex;
+            flex-wrap: wrap;
+            /* grid-template-columns: repeat(4, 1fr); */
+            gap: calc(var(--size) * 2);
         }
 
         #pieces-showcase .block:not(.active) {
@@ -179,14 +194,25 @@
             display: inline-block;
             width: var(--size);
             height: var(--size);
-            border: 2px solid gray;
+            border: 2px solid #000000;
             margin: 0;
             padding: 0;
 
+            position: relative;
         }
 
-        .block.selected {
-            background-color: aquamarine;
+        .block.selected::before {
+            content: "";
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            pointer-events: none;
+            background:
+                linear-gradient(45deg, aquamarine 45%, transparent 45%, transparent 55%, aquamarine 55%, aquamarine);
         }
 
         .block:hover {
